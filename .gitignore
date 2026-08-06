@@ -1,0 +1,9 @@
+﻿.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+renv/library/
+renv/staging/
+*.Rproj.user
+Thumbs.db
+desktop.ini

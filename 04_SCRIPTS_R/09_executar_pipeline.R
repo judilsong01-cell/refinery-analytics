@@ -1,0 +1,10 @@
+# Refinery Analytics — pipeline reproduzível (R base)
+raiz<-normalizePath(".");caminho<-function(...)file.path(raiz,...)
+for(p in c("03_DADOS_LIMPOS","06_GRAFICOS","07_TABELAS"))dir.create(caminho(p),showWarnings=FALSE,recursive=TRUE)
+bruto<-read.csv(caminho("01_DADOS_BRUTOS","oil.csv"),check.names=FALSE,stringsAsFactors=FALSE)
+names(bruto)<-gsub("(^_|_$)","",gsub("[^a-z0-9]+","_",tolower(names(bruto))))
+limpo<-bruto;limpo[]<-lapply(limpo,function(x)if(is.character(x))trimws(x)else x);limpo<-limpo[!duplicated(limpo),]
+write.csv(data.frame(linhas_brutas=nrow(bruto),linhas_limpas=nrow(limpo),colunas=ncol(limpo),ausentes=sum(is.na(limpo)),duplicados_removidos=nrow(bruto)-nrow(limpo)),caminho("07_TABELAS","validacao_limpeza.csv"),row.names=FALSE)
+write.csv(limpo,caminho("03_DADOS_LIMPOS","refinery_limpo.csv"),row.names=FALSE)
+resumo<-data.frame(variavel=names(limpo),media=sapply(limpo,mean,na.rm=TRUE),minimo=sapply(limpo,min,na.rm=TRUE),maximo=sapply(limpo,max,na.rm=TRUE));write.csv(resumo,caminho("07_TABELAS","resumo_variaveis_processo.csv"),row.names=FALSE)
+png(caminho("06_GRAFICOS","yield_vs_gravity.png"),1440,900,res=150);plot(limpo$gravity,limpo$percentage_yield,pch=19,col="#08519C",xlab="Gravity",ylab="Percentage yield",main="Relação entre gravidade e rendimento");dev.off();cat("Pipeline Refinery Analytics concluído.\n")

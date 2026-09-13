@@ -1,10 +1,35 @@
-# Refinery Analytics — pipeline reproduzível (R base)
-raiz<-normalizePath(".");caminho<-function(...)file.path(raiz,...)
-for(p in c("03_DADOS_LIMPOS","06_GRAFICOS","07_TABELAS"))dir.create(caminho(p),showWarnings=FALSE,recursive=TRUE)
-bruto<-read.csv(caminho("01_DADOS_BRUTOS","oil.csv"),check.names=FALSE,stringsAsFactors=FALSE)
-names(bruto)<-gsub("(^_|_$)","",gsub("[^a-z0-9]+","_",tolower(names(bruto))))
-limpo<-bruto;limpo[]<-lapply(limpo,function(x)if(is.character(x))trimws(x)else x);limpo<-limpo[!duplicated(limpo),]
-write.csv(data.frame(linhas_brutas=nrow(bruto),linhas_limpas=nrow(limpo),colunas=ncol(limpo),ausentes=sum(is.na(limpo)),duplicados_removidos=nrow(bruto)-nrow(limpo)),caminho("07_TABELAS","validacao_limpeza.csv"),row.names=FALSE)
-write.csv(limpo,caminho("03_DADOS_LIMPOS","refinery_limpo.csv"),row.names=FALSE)
-resumo<-data.frame(variavel=names(limpo),media=sapply(limpo,mean,na.rm=TRUE),minimo=sapply(limpo,min,na.rm=TRUE),maximo=sapply(limpo,max,na.rm=TRUE));write.csv(resumo,caminho("07_TABELAS","resumo_variaveis_processo.csv"),row.names=FALSE)
-png(caminho("06_GRAFICOS","yield_vs_gravity.png"),1440,900,res=150);plot(limpo$gravity,limpo$percentage_yield,pch=19,col="#08519C",xlab="Gravity",ylab="Percentage yield",main="Relação entre gravidade e rendimento");dev.off();cat("Pipeline Refinery Analytics concluído.\n")
+# Etapa 9 - Orquestrador
+# Executa o pipeline completo. O projeto e autonomo: nao depende de nada
+# fora desta pasta.
+#
+#   Rscript 04_SCRIPTS_R/09_executar_pipeline.R
+
+script_from_source  <- tryCatch(sys.frame(1)$ofile, error = function(e) NA_character_)
+script_from_rscript <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1])
+script_file <- if (!is.na(script_from_source) && nzchar(script_from_source)) script_from_source else script_from_rscript
+script_file <- tryCatch(normalizePath(script_file, mustWork = TRUE), error = function(e) NA_character_)
+if (is.na(script_file)) stop("Execute com source() ou Rscript.", call. = FALSE)
+
+scripts_dir  <- dirname(script_file)
+project_root <- dirname(scripts_dir)
+
+for (etapa in c("01_importar_dados.R", "02_inspecao_inicial.R", "03_limpeza_dados.R",
+                "04_transformacao_dados.R", "05_validacao_dados.R",
+                "06_analise_exploratoria.R", "07_visualizacoes.R",
+                "08_exportar_resultados.R")) {
+  source(file.path(scripts_dir, etapa), local = environment())
+}
+
+raw       <- importar_dados(project_root)
+inspecao  <- inspecionar_dados(raw)
+clean     <- limpar_dados(raw)
+clean     <- transformar_dados(clean)
+validacao <- validar_dados(raw, clean)
+ausencias <- tabela_ausencias(clean)
+analise   <- analisar_dados(clean)
+
+criar_graficos(clean, analise, project_root)
+exportar_resultados(clean, analise, validacao, ausencias, project_root)
+
+cat(sprintf("%s: pipeline concluido (%d linhas, %d colunas, %d duplicados exatos).\n",
+            PROJETO, nrow(clean), ncol(clean), inspecao$duplicados))

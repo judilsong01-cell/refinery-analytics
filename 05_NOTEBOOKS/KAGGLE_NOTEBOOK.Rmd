@@ -1,0 +1,69 @@
+---
+title: "Refinery Process Data Analysis in R | Yield & Properties"
+output: html_document
+---
+
+# Refinery Process Data Analysis in R | Yield & Properties
+
+## 1. Introduction
+
+This reproducible R analysis explores process yield and properties. It is descriptive; observed associations are not causal evidence.
+
+## 2. Analytical Questions
+
+- What are the scale, structure and data-quality issues?
+- Which patterns merit further investigation?
+
+## 3. Data Loading
+
+```{r}
+find_csv <- function() { files <- c(if (dir.exists("/kaggle/input")) list.files("/kaggle/input", pattern="\\\\.csv$", recursive=TRUE, full.names=TRUE) else character(), list.files("../01_DADOS_BRUTOS", pattern="\\\\.csv$", full.names=TRUE)); if (!length(files)) stop("No CSV input found."); files[1] }
+input_file <- find_csv()
+data_raw <- read.csv(input_file, check.names=FALSE, stringsAsFactors=FALSE)
+```
+
+## 4. Data Overview
+
+```{r}
+dim(data_raw); utils::head(data_raw, 3); str(data_raw)
+```
+
+## 5. Data Quality
+
+```{r}
+empty_count <- function(x) if (is.character(x)) sum(trimws(x)=="", na.rm=TRUE) else 0L
+quality_check <- data.frame(variable=names(data_raw), type=vapply(data_raw,function(x)class(x)[1],character(1)), missing_n=vapply(data_raw,function(x)sum(is.na(x)),integer(1)), empty_text_n=vapply(data_raw,empty_count,integer(1)))
+quality_check; sum(duplicated(data_raw))
+```
+
+## 6. Data Preparation
+
+```{r}
+clean_name <- function(x) { x <- gsub("([a-z0-9])([A-Z])", "\\\\1_\\\\2", x, perl=TRUE); gsub("(^_|_$)","",gsub("[^a-z0-9]+","_",tolower(x))) }
+data_clean <- data_raw; names(data_clean) <- clean_name(names(data_clean)); data_clean[] <- lapply(data_clean,function(x)if(is.character(x))trimws(x)else x)
+```
+
+## 7. Exploratory Data Analysis
+
+```{r}
+numeric_data <- data_clean[vapply(data_clean,is.numeric,logical(1))]
+if(ncol(numeric_data)) print(summary(numeric_data))
+if(ncol(numeric_data)>=2) print(round(cor(numeric_data,use="pairwise.complete.obs"),2))
+```
+
+## 8. Key Findings
+
+All quantities are calculated directly from the input. Interpret rates and averages only after checking group sizes, units and data quality.
+
+## 9. Technical Implications
+
+The analysis supports prioritisation and investigation; it should not be used as causal evidence or an operational limit without domain review.
+
+## 10. Limitations
+
+Dataset provenance, definitions, sampling and licence status require verification before publication.
+
+## 11. Conclusion
+
+This is a portable, transparent starting point for Refinery Analytics exploration in R.
+

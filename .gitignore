@@ -1,9 +1,10 @@
-﻿.Rhistory
+.Rhistory
 .RData
 .Ruserdata
 .Rproj.user/
+*.Rproj.user
 renv/library/
 renv/staging/
-*.Rproj.user
+Rplots.pdf
 Thumbs.db
 desktop.ini

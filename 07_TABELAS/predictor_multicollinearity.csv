@@ -1,0 +1,7 @@
+"variable_a","variable_b","correlation"
+"vapour_pressure","ten_percent_distillation_point",-0.906224796789339
+"gravity","ten_percent_distillation_point",-0.700153943204664
+"gravity","vapour_pressure",0.620586655210044
+"ten_percent_distillation_point","fraction_end_point",0.412246613962135
+"gravity","fraction_end_point",-0.3216781559815
+"vapour_pressure","fraction_end_point",-0.297984262657633

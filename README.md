@@ -1,118 +1,116 @@
-# Rendimento de Destilação numa Refinaria | Análise em R
+# Refinery Distillation Yield | Analysis in R
 
-Análise reproduzível de **32 lotes de destilação de petróleo bruto**, relacionando quatro
-propriedades físico-químicas do crude com o rendimento em gasolina obtido.
+Reproducible analysis of **32 crude oil distillation batches**, relating four physicochemical
+properties of the crude to the gasoline yield obtained.
 
-É deliberadamente o projeto mais pequeno do portefólio, e o mais focado numa questão:
-**o que se pode e o que não se pode concluir com 32 observações.**
+It is deliberately the smallest project in the portfolio, and the most focused on a single
+question: **what can and cannot be concluded from 32 observations.**
 
-**Stack:** R 4.5.2 · apenas R base · sem dependências externas
+**Stack:** R 4.5.2 · base R only · no external dependencies
 
 ---
 
-## Resultado principal
+## Headline finding
 
-> **O fraction end point é o que mais acompanha o rendimento (r = +0,71).** É a temperatura à qual
-> a destilação termina — quanto mais alto, mais fração é recolhida.
+> **Fraction end point tracks yield most closely (r = +0.71).** It is the temperature at which
+> distillation stops — the higher it goes, the more fraction is recovered.
 
-![Rendimento versus fraction end point](06_GRAFICOS/yield_vs_fraction_end_point.png)
+![Yield versus fraction end point](06_GRAFICOS/yield_vs_fraction_end_point.png)
 
-| Variável | Correlação com o rendimento |
+| Variable | Correlation with yield |
 |---|---:|
-| Fraction end point | **+0,712** |
-| Vapour pressure | +0,384 |
-| 10% distillation point | −0,315 |
-| Gravity | +0,246 |
+| Fraction end point | **+0.712** |
+| Vapour pressure | +0.384 |
+| 10% distillation point | −0.315 |
+| Gravity | +0.246 |
 
-![Correlações com o rendimento](06_GRAFICOS/yield_correlations.png)
+![Correlations with yield](06_GRAFICOS/yield_correlations.png)
 
-**Estatística descritiva das variáveis de processo:**
+**Descriptive statistics of the process variables:**
 
-| Variável | Média | Mediana | Desvio-padrão | Mín | Máx |
+| Variable | Mean | Median | SD | Min | Max |
 |---|---:|---:|---:|---:|---:|
-| Rendimento (%) | 19,66 | 17,80 | 10,72 | 2,8 | 45,7 |
-| Gravity | 39,25 | 40,00 | 5,64 | 31,8 | 50,8 |
-| Vapour pressure | 4,18 | 4,80 | 2,62 | 0,2 | 8,6 |
-| 10% distillation point | 241,5 | 231,0 | 37,54 | 190 | 316 |
-| Fraction end point | 332,1 | 349,0 | 69,76 | 205 | 444 |
+| Yield (%) | 19.66 | 17.80 | 10.72 | 2.8 | 45.7 |
+| Gravity | 39.25 | 40.00 | 5.64 | 31.8 | 50.8 |
+| Vapour pressure | 4.18 | 4.80 | 2.62 | 0.2 | 8.6 |
+| 10% distillation point | 241.5 | 231.0 | 37.54 | 190 | 316 |
+| Fraction end point | 332.1 | 349.0 | 69.76 | 205 | 444 |
 
-O rendimento varia entre 2,8% e 45,7% — uma amplitude de 16× — o que confirma que há de facto
-sinal a explicar nestes dados.
+Yield ranges from 2.8% to 45.7% — a 16x spread — which confirms there is real signal to explain
+in this data.
 
-## O verdadeiro tema: os preditores não são independentes
+## The actual story: the predictors are not independent
 
-> **Vapour pressure e 10% distillation point têm uma correlação de −0,91.**
-> Não são duas variáveis, são praticamente a mesma informação em escalas diferentes.
+> **Vapour pressure and 10% distillation point correlate at −0.91.**
+> They are not two variables; they are near enough the same information on different scales.
 
-| Par de preditores | Correlação |
+| Predictor pair | Correlation |
 |---|---:|
-| Vapour pressure × 10% distillation point | **−0,906** |
-| Gravity × 10% distillation point | −0,700 |
-| Gravity × Vapour pressure | **+0,621** |
-| 10% distillation point × Fraction end point | +0,412 |
-| Gravity × Fraction end point | −0,322 |
-| Vapour pressure × Fraction end point | −0,298 |
+| Vapour pressure x 10% distillation point | **−0.906** |
+| Gravity x 10% distillation point | −0.700 |
+| Gravity x Vapour pressure | **+0.621** |
+| 10% distillation point x Fraction end point | +0.412 |
+| Gravity x Fraction end point | −0.322 |
+| Vapour pressure x Fraction end point | −0.298 |
 
-![Matriz de dispersão](06_GRAFICOS/predictor_pairs.png)
+![Scatterplot matrix](06_GRAFICOS/predictor_pairs.png)
 
-Três dos quatro preditores estão fortemente ligados entre si. Num modelo de regressão múltipla
-esta multicolinearidade tornaria os coeficientes instáveis e sem interpretação individual fiável:
-a variável que aparecesse como "significativa" dependeria em boa medida da ordem em que fossem
-introduzidas. Com **32 observações para 4 preditores**, o problema agrava-se — a amostra não tem
-graus de liberdade para separar efeitos tão sobrepostos.
+Three of the four predictors are tightly bound to each other. In a multiple regression this
+collinearity would make the coefficients unstable and individually uninterpretable: which variable
+appeared "significant" would depend substantially on the order in which they entered. With
+**32 observations for 4 predictors**, the problem worsens — the sample has nowhere near the
+degrees of freedom to separate effects that overlap this much.
 
-Por isso este projeto reporta correlações simples e estatística descritiva, e **não ajusta um
-modelo múltiplo**. Chamar-lhe uma limitação seria enganador: reconhecer o que a amostra não
-suporta é o próprio resultado.
+For that reason this project reports simple correlations and descriptive statistics, and **fits no
+multiple model**. Calling that a limitation would be misleading: recognising what the sample
+cannot support is the result itself.
 
-## Método
+## Method
 
-1. **Importação** — CSV original lido de `01_DADOS_BRUTOS`, sem alteração.
-2. **Inspeção** — dimensões, valores em falta e duplicados exatos medidos antes da limpeza.
-3. **Limpeza** — nomes normalizados para *snake_case*.
-4. **Transformação** — conversão de tipos, com falha explícita se algum valor não for numérico.
-   **Não são criadas variáveis derivadas**, precisamente para não aumentar o número de preditores
-   face a uma amostra de 32 observações.
-5. **Validação** — registo de qualidade em `07_TABELAS/validacao_limpeza.csv`.
-6. **Análise, gráficos e exportação** — incluindo a tabela explícita de multicolinearidade entre
-   preditores, em `07_TABELAS/predictor_multicollinearity.csv`.
+1. **Import** — original CSV read from `01_DADOS_BRUTOS`, unchanged.
+2. **Inspect** — dimensions, missing values and exact duplicates measured before cleaning.
+3. **Clean** — column names normalised to snake_case.
+4. **Transform** — type coercion, failing explicitly if any value is non-numeric.
+   **No derived variables are created**, precisely to avoid inflating the predictor count against
+   a sample of 32 observations.
+5. **Validate** — quality record written to `07_TABELAS/validacao_limpeza.csv`.
+6. **Analyse, plot and export** — including an explicit predictor collinearity table, in
+   `07_TABELAS/predictor_multicollinearity.csv`.
 
-**Qualidade dos dados:** 32 linhas → 32 linhas · 0 valores em falta · 0 duplicados exatos ·
-0 linhas removidas.
+**Data quality:** 32 rows to 32 rows · 0 missing values · 0 exact duplicates · 0 rows removed.
 
-## Reproduzir
+## Reproduce
 
 ```bash
 Rscript 04_SCRIPTS_R/09_executar_pipeline.R
 ```
 
-## Estrutura
+## Structure
 
 ```
-01_DADOS_BRUTOS/    CSV original, imutável
-03_DADOS_LIMPOS/    dados tratados, gerados pelo pipeline
-04_SCRIPTS_R/       9 etapas, uma por ficheiro
-05_NOTEBOOKS/       notebook R Markdown para Kaggle
-06_GRAFICOS/        gráficos PNG
-07_TABELAS/         tabelas de resultados em CSV
-09_DOCUMENTACAO/    dicionário de dados e dependências
+01_DADOS_BRUTOS/    raw data, immutable
+03_DADOS_LIMPOS/    cleaned data, pipeline output
+04_SCRIPTS_R/       9 stages, one per file
+05_NOTEBOOKS/       R Markdown notebook for Kaggle
+06_GRAFICOS/        PNG charts
+07_TABELAS/         result tables as CSV
+09_DOCUMENTACAO/    data dictionary and dependencies
 ```
 
-## Limitações
+## Limitations
 
-Trinta e duas observações são poucas para qualquer conclusão robusta: com esta dimensão, o
-intervalo de confiança de uma correlação de 0,71 vai grosso modo de 0,48 a 0,85, e uma correlação
-de 0,25 não é distinguível de zero. Os lotes provêm de dez crudes diferentes, o que introduz
-estrutura de grupo que esta análise não modela. Nada aqui é causal: o fraction end point é uma
-condição de operação escolhida pelo operador, e pode estar a ser escolhido em função de
-características do crude que não constam do dataset.
+Thirty-two observations are few for any robust conclusion: at this sample size, the confidence
+interval around a correlation of 0.71 runs roughly from 0.48 to 0.85, and a correlation of 0.25 is
+indistinguishable from zero. The batches come from ten different crudes, introducing group
+structure that this analysis does not model. Nothing here is causal: fraction end point is an
+operating condition chosen by the operator, and it may well be chosen in response to crude
+characteristics absent from the dataset.
 
-## Dados
+## Data
 
-Dataset clássico de destilação de petróleo bruto (Prater, 1956), amplamente republicado em
-manuais de regressão e disponível no Kaggle. O CSV original está em `01_DADOS_BRUTOS` sem
-alterações.
+Classic crude oil distillation dataset (Prater, 1956), widely republished in regression textbooks
+and available on Kaggle. The original CSV sits unchanged in `01_DADOS_BRUTOS`.
 
-## Licença
+## Licence
 
-Código sob licença MIT (ver `LICENSE`). O dataset mantém os termos da fonte original.
+Code released under the MIT Licence (see `LICENSE`). The dataset keeps the terms of its original source.
